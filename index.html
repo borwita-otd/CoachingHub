@@ -400,7 +400,13 @@
         import { getFirestore, collection, doc, getDocs, onSnapshot, addDoc, updateDoc, writeBatch, query, setLogLevel, deleteDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- SECTION: KONFIGURASI FIREBASE & APLIKASI ---
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "...", authDomain: "...", projectId: "..." };
+        const firebaseConfig = {apiKey: "AIzaSyD-oH9MiKNj1Bz02HZ3PWSYScpXwvSROYM",
+                                authDomain: "coaching-hub-star.firebaseapp.com",
+                                projectId: "coaching-hub-star",
+                                storageBucket: "coaching-hub-star.firebasestorage.app",
+                                messagingSenderId: "414500185726",
+                                appId: "1:414500185726:web:2f4be8dd29234c13f5da2f"
+                                };
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-star-app';
         
         const app = initializeApp(firebaseConfig);
@@ -907,8 +913,8 @@
                 errorEl.classList.remove('error-shake');
             };
 
-            if (password === 'adminstar2025') {
-                handleLogin({ name: 'Admin', password: 'adminstar2025' }, 'admin');
+            if (password === 'otdborwita2025') { // CORRECTED PASSWORD
+                handleLogin({ name: 'Admin', password: 'otdborwita2025' }, 'admin');
                 return;
             }
             const mentorName = mentorNikMap[password];
