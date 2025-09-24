@@ -57,6 +57,11 @@
         }
         .auth-pending #app-container { visibility: hidden; }
         .error-shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        .calendar-day.has-session {
+            background-color: #dbeafe;
+            color: #1e40af;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body class="text-slate-800 auth-pending">
@@ -213,6 +218,10 @@
                         <p id="stat-sesi-menunggu" class="text-4xl font-bold text-amber-600 mt-2">0</p>
                     </div>
                 </div>
+                <section class="bg-white p-6 rounded-xl shadow-md mb-8">
+                    <h2 class="text-xl font-bold text-slate-900">Upcoming Session:</h2>
+                    <div id="admin-upcoming-calendar" class="mt-4"></div>
+                </section>
                 <div class="bg-white p-6 rounded-xl shadow-md">
                     <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
                         <h2 class="text-xl font-bold text-slate-900">Progress Seluruh Peserta</h2>
@@ -230,6 +239,8 @@
              <p>&copy; 2024 Borwita Coaching Hub. All rights reserved.</p>
         </footer>
     </div>
+
+    <div id="calendar-tooltip" class="hidden absolute z-[110] bg-slate-800 text-white text-sm rounded-lg shadow-lg p-3 w-max transition-opacity duration-200"></div>
 
     <!-- Modals -->
     <div id="session-note-modal" class="session-modal hidden">
@@ -400,14 +411,16 @@
         import { getFirestore, collection, doc, getDocs, onSnapshot, addDoc, updateDoc, writeBatch, query, setLogLevel, deleteDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // --- SECTION: KONFIGURASI FIREBASE & APLIKASI ---
-        const firebaseConfig = {apiKey: "AIzaSyD-oH9MiKNj1Bz02HZ3PWSYScpXwvSROYM",
-                                authDomain: "coaching-hub-star.firebaseapp.com",
-                                projectId: "coaching-hub-star",
-                                storageBucket: "coaching-hub-star.firebasestorage.app",
-                                messagingSenderId: "414500185726",
-                                appId: "1:414500185726:web:2f4be8dd29234c13f5da2f"
-                                };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-star-app';
+        const firebaseConfig = {
+          apiKey: "AIzaSyD-oH9MiKNj1Bz02HZ3PWSYScpXwvSROYM",
+          authDomain: "coaching-hub-star.firebaseapp.com",
+          projectId: "coaching-hub-star",
+          storageBucket: "coaching-hub-star.appspot.com",
+          messagingSenderId: "414500185726",
+          appId: "1:414500185726:web:2f4be8dd29234c13f5da2f"
+        };
+
+        const appId = 'default-star-app';
         
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
@@ -421,24 +434,24 @@
         const availabilitiesCol = collection(db, `artifacts/${appId}/public/data/coachAvailabilities`);
 
         // --- SECTION: STATE MANAGEMENT APLIKASI ---
-        // Objek utama untuk menyimpan semua data dinamis aplikasi.
         let state = {
             currentUser: null,
-            userRole: null, // 'peserta', 'coach', 'admin'
+            userRole: null, 
             participants: [],
             sessions: [],
             coachingLogs: [],
             coaches: [],
-            availabilities: {}, // { coachName: ['YYYY-MM-DD', ...], ... }
-            tempAvailabilities: [], // Untuk menyimpan perubahan ketersediaan coach sementara
+            availabilities: {},
+            tempAvailabilities: [],
+            isDataReady: false,
             calendar: {
                 coach: { month: new Date().getMonth(), year: new Date().getFullYear() },
                 peserta: { month: new Date().getMonth(), year: new Date().getFullYear() },
+                admin: { month: new Date().getMonth(), year: new Date().getFullYear() },
             },
         };
 
         // --- SECTION: DATA STATIS & MAPPING ---
-        // Mapping NIK ke Nama Coach untuk proses login
         const mentorNikMap = {
             '20000301HE': 'HADI EKO SUSENO', 'BCP0009076': 'RAY FANDI', '2017112459IM': 'INDRA PRIMA LUKITO',
             '20130610DY': 'DEBBY YUGIANDI PERMANA', '20040615WS': 'WAWAN SETYAWAN', '2016080693NA': 'NASDIN SJAMSUDDIN',
@@ -446,78 +459,49 @@
         };
         state.coaches = Object.values(mentorNikMap);
 
-        // --- SECTION: KUMPULAN DOM ELEMENTS ---
-        // Menyimpan referensi ke elemen HTML yang sering digunakan.
+        // --- Kumpulan DOM Elements ---
         const body = document.body;
         const entryHeader = document.getElementById('entry-header');
         const loginOverlayBlock = document.getElementById('login-overlay-block');
         const appContainer = document.getElementById('app-container');
         const loadingOverlay = document.getElementById('loading-overlay');
         const loadingText = document.getElementById('loading-text');
-        const logoutBtn = document.getElementById('logout-btn');
-        const views = {
-            peserta: document.getElementById('peserta-view'),
-            coach: document.getElementById('coach-view'),
-            admin: document.getElementById('admin-view'),
-        };
-        const coachReviewModal = document.getElementById('coach-review-modal');
-        const sessionDetailsModal = document.getElementById('session-details-modal');
-        const sessionNoteModal = document.getElementById('session-note-modal');
-        const sessionNoteForm = document.getElementById('session-note-form');
-        const editModal = document.getElementById('edit-session-modal');
 
-        // --- SECTION: FUNGSI UTILITY & HELPERS ---
-        /**
-         * Mengkonversi objek Date menjadi format string 'YYYY-MM-DD'.
-         * @param {Date} date Objek Date yang akan dikonversi.
-         * @returns {string} String tanggal.
-         */
-        const toYYYYMMDD = (date) => {
-            const d = new Date(date);
-            const year = d.getFullYear();
-            const month = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-        
-        // --- SECTION: LOGIKA UTAMA & INISIALISASI APLIKASI ---
-        /**
-         * Fungsi utama yang dieksekusi saat aplikasi pertama kali dimuat.
-         * Mengatur otentikasi dan memuat data awal.
-         */
         async function main() {
-            onAuthStateChanged(auth, async (user) => {
-                if (user) {
-                    await initializeAndLoadData();
-                    setupRealtimeListeners();
-                } else {
-                    showLoginScreen();
-                }
-            });
+            if (firebaseConfig.apiKey.startsWith("GANTI_DENGAN")) {
+                loadingText.innerHTML = "Konfigurasi Firebase belum diisi.<br>Silakan edit file index.html dan masukkan konfigurasi Anda.";
+                loadingOverlay.querySelector('svg').classList.add('hidden');
+                return;
+            }
+
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        console.log("Firebase Auth user signed in anonymously:", user.uid);
+                        await initializeAndLoadData();
+                        setupRealtimeListeners();
+                    } else {
+                        showLoginScreen();
+                    }
+                });
+                await signInAnonymously(auth);
             } catch (error) {
-                console.error("Authentication failed:", error);
-                loadingText.textContent = "Gagal melakukan otentikasi.";
+                console.error("Firebase Authentication failed:", error);
+                loadingText.textContent = "Gagal melakukan otentikasi. Cek konfigurasi Firebase dan Authorized Domains.";
                 loadingOverlay.querySelector('svg').classList.add('hidden');
             }
         }
         
-        /**
-         * Memuat data awal dari Firestore.
-         * Jika koleksi 'participants' kosong, fungsi ini akan mengisi data awal (seeding).
-         */
         async function initializeAndLoadData() {
             try {
-                loadingText.textContent = "Memuat data awal...";
+                loadingText.textContent = "Memuat data peserta...";
+                console.log("Fetching initial data from Firestore...");
+                
                 const participantsSnapshot = await getDocs(query(participantsCol));
+
                 if (participantsSnapshot.empty) {
-                    console.log("No participants found, seeding initial data...");
-                    loadingText.textContent = "Menyiapkan data awal...";
+                    console.log("No participants found, attempting to seed initial data...");
+                    loadingText.textContent = "Menyiapkan data awal untuk pertama kali...";
                     const initialParticipantsData = [
                         { name: 'WISNU JATI NUGROHO', coach: 'HADI EKO SUSENO', password: 'BCP0009308' }, { name: 'NUNUNG SUPRIADY', coach: 'HADI EKO SUSENO', password: 'BCP0008621' },
                         { name: 'FILTRA ABSRI', coach: 'RAY FANDI', password: 'BCP0009188' }, { name: 'URBANUS MASYUR', coach: 'INDRA PRIMA LUKITO', password: 'BCP0009504' },
@@ -530,31 +514,68 @@
                     const batch = writeBatch(db);
                     initialParticipantsData.forEach(p => { batch.set(doc(participantsCol), {...p, level: 'Peserta STAR'}); });
                     await batch.commit();
+                    console.log("Seeding complete. Refetching data...");
+                    const newParticipantsSnap = await getDocs(query(participantsCol));
+                    state.participants = newParticipantsSnap.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+                } else {
+                    state.participants = participantsSnapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
                 }
-
-                const [participantsSnap, availabilitiesSnap, sessionsSnap, coachingLogsSnap] = await Promise.all([
-                    getDocs(query(participantsCol)), getDocs(query(availabilitiesCol)),
-                    getDocs(query(sessionsCol)), getDocs(query(coachingLogsCol))
-                ]);
                 
-                state.participants = participantsSnap.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
-                state.coaches = Object.values(mentorNikMap);
-                state.availabilities = {};
-                availabilitiesSnap.docs.forEach(doc => { state.availabilities[doc.id] = doc.data().availableDates || []; });
-                state.sessions = sessionsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                state.coachingLogs = coachingLogsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
+                console.log(`Successfully loaded ${state.participants.length} participants.`);
+                state.isDataReady = true;
                 checkSavedLogin();
+
             } catch (error) {
-                console.error("Failed to load initial data:", error);
-                loadingText.textContent = "Gagal memuat data.";
+                console.error("Failed to load or seed initial data:", error);
+                loadingText.textContent = "Gagal memuat data. Cek koneksi dan aturan keamanan Firestore.";
                 loadingOverlay.querySelector('svg').classList.add('hidden');
             }
         }
         
-        /**
-         * Mengatur listener realtime untuk semua koleksi agar data di UI selalu sinkron.
-         */
+        document.getElementById('entry-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            if (!state.isDataReady) {
+                showConfirmation('Mohon Tunggu', 'Data sedang dimuat, silakan coba lagi sesaat.', null, true, false);
+                return;
+            }
+
+            const password = document.getElementById('entry-password').value;
+            const errorEl = document.getElementById('entry-error');
+            
+            const handleLogin = (user, role) => {
+                state.currentUser = user;
+                state.userRole = role;
+                localStorage.setItem('coachingHubUser', JSON.stringify({ id: user.password || user.name, role }));
+                switchView(role);
+                renderViews();
+                errorEl.classList.add('hidden');
+                errorEl.classList.remove('error-shake');
+            };
+
+            if (password === 'otdborwita2025') {
+                handleLogin({ name: 'Admin', password: 'otdborwita2025' }, 'admin');
+                return;
+            }
+            const mentorName = mentorNikMap[password];
+            if (mentorName) {
+                handleLogin({ name: mentorName, password: password }, 'coach');
+                return;
+            }
+            
+            console.log(`Attempting to log in. Total participants loaded: ${state.participants.length}`);
+            const participant = state.participants.find(p => p.password === password);
+            if (participant) {
+                handleLogin(participant, 'peserta');
+                return;
+            }
+            
+            errorEl.textContent = "Password tidak ditemukan. Pastikan data telah termuat.";
+            errorEl.classList.remove('hidden');
+            errorEl.classList.add('error-shake');
+            setTimeout(() => errorEl.classList.remove('error-shake'), 500);
+        });
+
         function setupRealtimeListeners() {
             onSnapshot(participantsCol, (snapshot) => {
                 state.participants = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
@@ -591,20 +612,22 @@
             loginOverlayBlock.classList.remove('hidden');
         }
 
-        // --- SECTION: LOGIKA RENDERING TAMPILAN (VIEW) ---
-        /**
-         * Beralih antara tampilan 'peserta', 'coach', atau 'admin'.
-         * @param {string|null} role Peran pengguna atau null untuk logout.
-         */
         function switchView(role) {
+            const logoutBtn = document.getElementById('logout-btn');
+            const views = {
+                peserta: document.getElementById('peserta-view'),
+                coach: document.getElementById('coach-view'),
+                admin: document.getElementById('admin-view'),
+            };
+
             if (role) {
-                entryHeader.classList.add('-translate-y-full');
-                loginOverlayBlock.classList.add('hidden');
+                document.getElementById('entry-header').classList.add('-translate-y-full');
+                document.getElementById('login-overlay-block').classList.add('hidden');
                 logoutBtn.classList.remove('hidden');
                 Object.values(views).forEach(v => v.classList.remove('active'));
                 views[role].classList.add('active');
-                body.classList.remove('auth-pending');
-                appContainer.style.visibility = 'visible';
+                document.body.classList.remove('auth-pending');
+                document.getElementById('app-container').style.visibility = 'visible';
             } else {
                 state.currentUser = null;
                 state.userRole = null;
@@ -614,9 +637,6 @@
             }
         }
 
-        /**
-         * Fungsi render utama, memanggil fungsi render spesifik berdasarkan peran pengguna.
-         */
         function renderViews() {
             if (!state.currentUser) return;
             document.getElementById('welcome-message').textContent = `Selamat datang, ${state.currentUser.name}!`;
@@ -628,6 +648,11 @@
             }
         }
         
+        function toYYYYMMDD(date) {
+            const d = new Date(date);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
         function renderPesertaView() {
             const jadwalList = document.getElementById('peserta-jadwal-list');
             const progressList = document.getElementById('peserta-progress-list');
@@ -683,6 +708,10 @@
             document.getElementById('stat-sesi-selesai').textContent = state.sessions.filter(s => s.status === 'Selesai').length;
             document.getElementById('stat-sesi-menunggu').textContent = state.sessions.filter(s => s.status === 'Diajukan' || s.status === 'Disetujui').length;
             
+            const adminCalendarContainer = document.getElementById('admin-upcoming-calendar');
+            const { month, year } = state.calendar.admin;
+            renderAdminCalendar(adminCalendarContainer, month, year);
+
             const participantList = document.getElementById('admin-participant-list');
             const sortedParticipants = [...state.participants].sort((a,b) => a.name.localeCompare(b.name));
 
@@ -690,13 +719,28 @@
                 const logs = state.coachingLogs.filter(log => log.coacheeId === p.docId);
                 const completedCount = logs.length;
                 const progress = (completedCount / 6) * 100;
+
+                const participantSessions = state.sessions
+                    .filter(s => s.coacheeId === p.docId)
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                const sessionsHtml = participantSessions.length > 0 
+                    ? `<div class="mt-4 pt-4 border-t border-slate-200">
+                           <h4 class="text-sm font-semibold text-slate-600 mb-2">Jadwal Sesi Diajukan:</h4>
+                           <div class="space-y-2 max-h-48 overflow-y-auto pr-2">
+                               ${participantSessions.map(renderAdminSessionItem).join('')}
+                           </div>
+                       </div>`
+                    : '<p class="text-xs text-slate-400 italic mt-4 pt-4 border-t border-slate-200">Belum ada jadwal yang diajukan.</p>';
+
                 return `<div class="bg-white p-4 rounded-xl shadow-md">
                             <h3 class="font-bold text-xl text-slate-800">${p.name}</h3>
                             <p class="text-sm font-medium text-slate-600">Coach: ${p.coach} | Sesi Selesai: <span class="font-bold">${completedCount}/6</span></p>
                             <div class="progress-bar-container mt-2">
                                 <div class="progress-bar" style="width: ${progress}%;"></div>
                             </div>
-                            <div class="flex flex-col sm:flex-row gap-2 mt-2">
+                            ${sessionsHtml}
+                            <div class="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-slate-200">
                                 <button class="view-coachee-progress-btn flex-1 text-blue-600 text-sm hover:underline" data-id="${p.docId}">Lihat Progress Detail</button>
                                 <button class="download-coachee-report-btn flex-1 text-green-600 text-sm hover:underline" data-id="${p.docId}">Unduh Detail Sesi (.csv)</button>
                             </div>
@@ -705,6 +749,25 @@
             }).join('') : `<p class="text-center text-slate-500 italic">Tidak ada data peserta.</p>`;
         }
         
+        function renderAdminSessionItem(session) {
+            const sessionDate = new Date(session.date + 'T00:00:00').toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+            let statusBadge = '';
+            switch(session.status) {
+                case 'Diajukan': statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Diajukan</span>`; break;
+                case 'Disetujui': statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Disetujui</span>`; break;
+                case 'Ditolak': statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Ditolak</span>`; break;
+                case 'Selesai': statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Selesai</span>`; break;
+                default: statusBadge = `<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">${session.status}</span>`;
+            }
+            return `<div class="text-sm p-2 bg-slate-50 rounded-md flex justify-between items-center">
+                        <div>
+                            <p class="font-medium text-slate-600">${session.topic || session.type}</p>
+                            <p class="text-xs text-slate-400">${sessionDate}</p>
+                        </div>
+                        ${statusBadge}
+                    </div>`;
+        }
+
         function renderSessionCard(session, role) {
             const coachee = state.participants.find(p => p.docId === session.coacheeId);
             if (!coachee) return '';
@@ -810,6 +873,7 @@
         }
         
         function renderActionItems(log, isCoachOrAdmin) {
+            if(!log.actionItems) return '';
             return log.actionItems.map((item, index) => renderSingleActionItem(item, index, log, isCoachOrAdmin)).join('');
         }
         
@@ -818,7 +882,6 @@
             const reportText = item.report ? `<div class="mt-2 p-2 bg-slate-50 rounded-md text-xs"><p class="font-semibold">Laporan Peserta:</p><p>${item.report}</p></div>` : '';
             const evidenceHtml = item.evidenceUrl ? `<div class="mt-2 text-xs"><p class="font-semibold">Bukti:</p><a href="${item.evidenceUrl}" target="_blank" class="text-blue-600 hover:underline">Link Bukti</a></div>` : '';
 
-            // --- Logika Status ---
             switch(item.status) {
                 case 'pending_approval':
                     statusHtml = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Menunggu Persetujuan Coach</span>`;
@@ -832,11 +895,10 @@
                 case 'rejected':
                     statusHtml = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Ditolak</span>`;
                     break;
-                default: // 'open'
+                default:
                     statusHtml = `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">Belum Dikerjakan</span>`;
             }
 
-            // --- Logika Tombol Aksi & Form untuk Peserta ---
             if (state.userRole === 'peserta' && log.planStatus === 'approved' && (item.status === 'open' || item.status === 'rejected')) {
                 const isRevision = item.status === 'rejected';
                 actionButton = `<button data-log-id="${log.id}" data-item-index="${itemIndex}" class="report-item-btn text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded mt-2">${isRevision ? 'Perbaiki Laporan' : 'Lapor Pengerjaan'}</button>`;
@@ -897,41 +959,6 @@
             container.appendChild(grid);
         }
 
-        // --- SECTION: EVENT LISTENERS ---
-        document.getElementById('entry-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            const password = document.getElementById('entry-password').value;
-            const errorEl = document.getElementById('entry-error');
-            
-            const handleLogin = (user, role) => {
-                state.currentUser = user;
-                state.userRole = role;
-                localStorage.setItem('coachingHubUser', JSON.stringify({ id: user.password || user.name, role }));
-                switchView(role);
-                renderViews();
-                errorEl.classList.add('hidden');
-                errorEl.classList.remove('error-shake');
-            };
-
-            if (password === 'otdborwita2025') { // CORRECTED PASSWORD
-                handleLogin({ name: 'Admin', password: 'otdborwita2025' }, 'admin');
-                return;
-            }
-            const mentorName = mentorNikMap[password];
-            if (mentorName) {
-                handleLogin({ name: mentorName, password: password }, 'coach');
-                return;
-            }
-
-            const participant = state.participants.find(p => p.password === password);
-            if (participant) {
-                handleLogin(participant, 'peserta');
-                return;
-            }
-            errorEl.classList.remove('hidden');
-            errorEl.classList.add('error-shake');
-        });
-
         document.getElementById('logout-btn').addEventListener('click', () => {
             localStorage.removeItem('coachingHubUser');
             document.getElementById('entry-form').reset();
@@ -960,7 +987,6 @@
             showConfirmation('Berhasil!', 'Jadwal sesi berhasil diajukan.', null, true, true);
         });
         
-        // Event delegation untuk menangani klik pada elemen dinamis
         document.addEventListener('click', async (e) => {
             const target = e.target;
             if(target.matches('.calendar-nav')) {
@@ -969,7 +995,9 @@
                 if (target.dataset.action === 'prev') { month--; if (month < 0) { month = 11; year--; } }
                 else { month++; if (month > 11) { month = 0; year++; } }
                 state.calendar[role] = { month, year };
-                if (role === 'coach') renderCoachView(); else renderPesertaView();
+                if (role === 'coach') renderCoachView(); 
+                else if (role === 'peserta') renderPesertaView();
+                else if (role === 'admin') renderAdminView();
             }
             if(target.matches('#coach-availability-calendar .calendar-day.selectable')) {
                 const dateString = target.dataset.date;
@@ -1064,6 +1092,33 @@
             }
         });
         
+        const tooltip = document.getElementById('calendar-tooltip');
+        document.addEventListener('mouseover', (e) => {
+            const target = e.target.closest('#admin-upcoming-calendar .has-session');
+            if (target) {
+                const sessions = JSON.parse(target.dataset.sessions);
+                const participantNames = sessions.map(session => {
+                    const participant = state.participants.find(p => p.docId === session.coacheeId);
+                    return participant ? participant.name : 'Peserta tidak dikenal';
+                }).filter((value, index, self) => self.indexOf(value) === index);
+
+                if (participantNames.length > 0) {
+                    tooltip.innerHTML = `<span class="font-bold text-xs block mb-1 border-b border-slate-600 pb-1">Peserta Terjadwal:</span><ul class="space-y-1 mt-2">${participantNames.map(name => `<li>- ${name}</li>`).join('')}</ul>`;
+                    
+                    const rect = target.getBoundingClientRect();
+                    tooltip.style.left = `${rect.left + window.scrollX}px`;
+                    tooltip.style.top = `${rect.bottom + window.scrollY + 8}px`; 
+                    tooltip.classList.remove('hidden');
+                }
+            }
+        });
+        document.addEventListener('mouseout', (e) => {
+            const target = e.target.closest('#admin-upcoming-calendar .has-session');
+            if (target) {
+                tooltip.classList.add('hidden');
+            }
+        });
+        
         document.getElementById('peserta-propose-agenda').addEventListener('change', (e) => {
              const othersInput = document.getElementById('peserta-propose-agenda-lainnya');
              const sessionNumberDisplay = document.getElementById('session-number-display');
@@ -1111,8 +1166,9 @@
             }
         });
         
-        // --- SECTION: LOGIKA MODAL ---
         function openSessionNoteModal(logToEdit = null, sessionId = null) {
+            const sessionNoteForm = document.getElementById('session-note-form');
+            const sessionNoteModal = document.getElementById('session-note-modal');
             sessionNoteForm.reset();
             document.getElementById('note-log-id').value = logToEdit ? logToEdit.id : '';
             document.getElementById('note-session-id').value = logToEdit ? logToEdit.sessionId : sessionId;
@@ -1142,7 +1198,7 @@
                 document.getElementById('form-resolution-resolution').value = form.resolutionResolution || ''; document.getElementById('form-empowerment-commitment').value = form.empowermentCommitment || '';
                 document.getElementById('form-wrapup-value').value = form.wrapupValue || ''; document.getElementById('form-wrapup-next').value = form.wrapupNext || '';
                 
-                logToEdit.actionItems.forEach((item, index) => addActionItem(index + 1, item));
+                if (logToEdit.actionItems) logToEdit.actionItems.forEach((item, index) => addActionItem(index + 1, item));
             } else { // Baru
                 document.getElementById('session-note-modal-title').textContent = 'Catatan Pelaksanaan Sesi';
                 document.getElementById('note-modal-submit-btn').textContent = 'Kirim untuk Review';
@@ -1152,9 +1208,9 @@
             document.getElementById('add-note-action-item-btn').onclick = () => addActionItem(actionItemsContainer.querySelectorAll('.action-item-group').length + 1);
             sessionNoteModal.classList.remove('hidden');
         }
-        document.getElementById('note-modal-cancel-btn').addEventListener('click', () => sessionNoteModal.classList.add('hidden'));
-        document.getElementById('note-modal-submit-btn').addEventListener('click', () => sessionNoteForm.requestSubmit());
-        sessionNoteForm.addEventListener('submit', async (e) => {
+        document.getElementById('note-modal-cancel-btn').addEventListener('click', () => document.getElementById('session-note-modal').classList.add('hidden'));
+        document.getElementById('note-modal-submit-btn').addEventListener('click', () => document.getElementById('session-note-form').requestSubmit());
+        document.getElementById('session-note-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const logId = document.getElementById('note-log-id').value;
             const sessionId = document.getElementById('note-session-id').value;
@@ -1180,10 +1236,11 @@
                 await addDoc(coachingLogsCol, logData);
                 await updateDoc(doc(db, sessionsCol.path, sessionId), { status: 'Selesai' });
             }
-            sessionNoteModal.classList.add('hidden');
+            document.getElementById('session-note-modal').classList.add('hidden');
         });
 
         function openCoachReviewModal(logId) {
+            const coachReviewModal = document.getElementById('coach-review-modal');
             const log = state.coachingLogs.find(l => l.id === logId);
             if (!log) return;
             const coachee = state.participants.find(p => p.docId === log.coacheeId);
@@ -1202,6 +1259,7 @@
         }
 
         async function handleReviewSubmission(approve) {
+            const coachReviewModal = document.getElementById('coach-review-modal');
             const logId = document.getElementById('review-log-id').value;
             const planStatus = approve ? 'approved' : 'rejected';
             
@@ -1220,11 +1278,12 @@
             coachReviewModal.classList.add('hidden');
         }
 
-        document.getElementById('review-modal-cancel-btn').addEventListener('click', () => coachReviewModal.classList.add('hidden'));
+        document.getElementById('review-modal-cancel-btn').addEventListener('click', () => document.getElementById('coach-review-modal').classList.add('hidden'));
         document.getElementById('review-modal-approve-btn').addEventListener('click', () => handleReviewSubmission(true));
         document.getElementById('review-modal-reject-btn').addEventListener('click', () => handleReviewSubmission(false));
 
         function openSessionDetailsModal(logId) {
+            const sessionDetailsModal = document.getElementById('session-details-modal');
             const log = state.coachingLogs.find(l => l.id === logId);
             if (!log) return;
             const coachee = state.participants.find(p => p.docId === log.coacheeId);
@@ -1242,16 +1301,17 @@
 
             sessionDetailsModal.classList.remove('hidden');
         }
-        document.getElementById('session-details-close-btn').addEventListener('click', () => sessionDetailsModal.classList.add('hidden'));
+        document.getElementById('session-details-close-btn').addEventListener('click', () => document.getElementById('session-details-modal').classList.add('hidden'));
 
         function openEditModal(sessionId) {
+            const editModal = document.getElementById('edit-session-modal');
             const session = state.sessions.find(s => s.id === sessionId); if (!session) return;
             document.getElementById('edit-modal-session-id').value = sessionId;
             document.getElementById('edit-modal-date').value = session.date;
             document.getElementById('edit-modal-topic').value = session.topic;
             editModal.classList.remove('hidden');
         }
-        document.getElementById('edit-modal-cancel-btn').addEventListener('click', () => editModal.classList.add('hidden'));
+        document.getElementById('edit-modal-cancel-btn').addEventListener('click', () => document.getElementById('edit-session-modal').classList.add('hidden'));
         document.getElementById('edit-modal-submit-btn').addEventListener('click', () => document.getElementById('edit-session-form').requestSubmit());
         document.getElementById('edit-session-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -1259,7 +1319,7 @@
             const newDate = document.getElementById('edit-modal-date').value;
             const newTopic = document.getElementById('edit-modal-topic').value;
             await updateDoc(doc(db, sessionsCol.path, sessionId), { date: newDate, topic: newTopic });
-            editModal.classList.add('hidden');
+            document.getElementById('edit-session-modal').classList.add('hidden');
         });
 
         const confirmModal = document.getElementById('confirmation-modal');
@@ -1410,23 +1470,83 @@
 
         function checkSavedLogin() {
             const savedUser = localStorage.getItem('coachingHubUser');
-            let user, role;
-            if (savedUser) {
+            if (savedUser && state.isDataReady) {
                 const { id: savedId, role: savedRole } = JSON.parse(savedUser);
-                role = savedRole;
-                if (role === 'admin') user = { name: 'Admin', password: savedId };
-                else if (role === 'coach') user = { name: mentorNikMap[savedId], password: savedId };
+                let user;
+                if (savedRole === 'admin') user = { name: 'Admin', password: savedId };
+                else if (savedRole === 'coach') user = { name: mentorNikMap[savedId], password: savedId };
                 else user = state.participants.find(p => p.password === savedId);
+
+                if (user) {
+                    state.currentUser = user; 
+                    state.userRole = savedRole;
+                    switchView(savedRole);
+                    renderViews();
+                }
+            }
+            if(state.isDataReady) {
+               showLoginScreen();
+            }
+        }
+        
+        function renderAdminCalendar(container, month, year) {
+            container.innerHTML = '';
+
+            const sessionsByDate = state.sessions.reduce((acc, session) => {
+                const date = session.date;
+                if (!acc[date]) acc[date] = [];
+                acc[date].push(session);
+                return acc;
+            }, {});
+
+            const date = new Date(year, month);
+            const monthName = date.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
+            
+            const header = document.createElement('div');
+            header.className = 'flex justify-between items-center mb-2';
+            header.innerHTML = `<button data-role="admin" data-action="prev" class="calendar-nav p-1 rounded-full hover:bg-slate-200 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <span class="font-semibold text-center text-slate-800">${monthName}</span>
+            <button data-role="admin" data-action="next" class="calendar-nav p-1 rounded-full hover:bg-slate-200 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+            </button>`;
+            container.appendChild(header);
+
+            const grid = document.createElement('div');
+            grid.className = 'calendar-grid';
+            ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'].forEach(day => {
+                const dayEl = document.createElement('div'); dayEl.className = 'calendar-day header'; dayEl.textContent = day; grid.appendChild(dayEl);
+            });
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const today = new Date(); today.setHours(0,0,0,0);
+            
+            for (let i = 0; i < firstDay; i++) { 
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'calendar-day other-month';
+                grid.appendChild(emptyCell); 
             }
 
-            if (user && role) {
-                state.currentUser = user; state.userRole = role;
-                switchView(role);
-                renderViews();
-                hideLoading();
-            } else {
-                showLoginScreen();
+            for (let i = 1; i <= daysInMonth; i++) {
+                const dayEl = document.createElement('div');
+                const currentDate = new Date(year, month, i);
+                const dateString = toYYYYMMDD(currentDate);
+                dayEl.className = 'calendar-day';
+                dayEl.textContent = i;
+                
+                if (sessionsByDate[dateString]) {
+                    dayEl.classList.add('has-session');
+                    dayEl.dataset.sessions = JSON.stringify(sessionsByDate[dateString]);
+                }
+
+                if (currentDate.getTime() === today.getTime()) {
+                    dayEl.classList.add('today');
+                }
+                grid.appendChild(dayEl);
             }
+            container.appendChild(grid);
         }
 
         // --- Inisialisasi Aplikasi ---
