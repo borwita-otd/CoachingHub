@@ -98,9 +98,23 @@
             <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <div class="flex justify-between items-center">
                     <div>
-                        <h1 class="text-xl sm:text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-                            <span><span class="mr-2">🌟</span>Coaching Hub: STAR 2.0</span>
-                            <span class="text-xs font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded-full">v.Final</span>
+                        <h1 class="flex flex-col md:flex-row md:items-center md:gap-3 font-extrabold text-slate-900 tracking-tight">
+                            <!-- Logo -->
+                            <img src="logo.png" alt="Logo" 
+                                class="w-12 h-7 md:w-[70px] md:h-[35px] object-contain mb-1 md:mb-0">
+
+                            <!-- Teks + Badge -->
+                            <span class="text-lg sm:text-2xl md:text-3xl flex flex-col md:flex-row md:items-center">
+                                <!-- Baris 1 -->
+                                <span>Coaching Hub:</span>
+                                <!-- Baris 2 (di HP block, di laptop inline) -->
+                                <span class="block md:inline md:ml-2">STAR 2.0</span>
+
+                                <!-- Badge hanya tampil di laptop -->
+                                <span class="hidden md:inline ml-2 text-[10px] sm:text-xs md:text-sm font-bold text-blue-600 bg-blue-100 px-2 py-0.5 rounded-full">
+                                    Go Live
+                                </span>
+                            </span>
                         </h1>
                         <p id="welcome-message" class="mt-1 text-sm sm:text-base text-slate-600">Selamat datang!</p>
                     </div>
