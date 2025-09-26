@@ -62,6 +62,17 @@
             color: #1e40af;
             font-weight: bold;
         }
+        .loader {
+            width: 48px;
+            height: 48px;
+            border: 5px solid #FFF;
+            border-bottom-color: #3b82f6;
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="text-slate-800 auth-pending">
@@ -69,7 +80,7 @@
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="fixed inset-0 bg-white/80 backdrop-blur-sm flex justify-center items-center z-50">
         <div class="text-center">
-            <svg class="animate-spin h-10 w-10 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <span class="loader text-blue-600"></span>
             <p id="loading-text" class="mt-4 text-lg font-semibold text-slate-700">Menghubungkan ke Database...</p>
         </div>
     </div>
@@ -98,7 +109,7 @@
             <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
                 <div class="flex justify-between items-center">
                     <div>
-                        <h1 class="flex flex-col md:flex-row md:items-center md:gap-3 font-extrabold text-slate-900 tracking-tight">
+                         <h1 class="flex flex-col md:flex-row md:items-center md:gap-3 font-extrabold text-slate-900 tracking-tight">
                             <!-- Logo -->
                             <img src="logo.png" alt="Logo" 
                                 class="w-12 h-7 md:w-[70px] md:h-[35px] object-contain mb-1 md:mb-0">
@@ -136,11 +147,11 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div class="lg:col-span-2 space-y-8">
                         <section id="peserta-jadwal" class="bg-white p-4 sm:p-6 rounded-xl shadow-md">
-                             <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-6 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-7 sm:w-7 mr-3 text-purple-600" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd" /></svg>Jadwal Sesi Anda</h2>
+                             <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-6 flex items-center"><span class="text-2xl mr-3">🗓️</span>Jadwal Sesi Anda</h2>
                              <div id="peserta-jadwal-list" class="space-y-4"></div>
                         </section>
                         <section id="peserta-progress" class="bg-white p-4 sm:p-6 rounded-xl shadow-md">
-                             <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-6 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 sm:h-7 sm:w-7 mr-3 text-indigo-600" viewBox="0 0 20 20" fill="currentColor"><path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10.392C2.057 15.71 3.245 16 4.5 16c1.255 0 2.443-.29 3.5-.804V4.804zM15.5 4c-1.255 0-2.443.29-3.5.804v10.392c1.057.514 2.245.804 3.5.804c1.255 0 2.443-.29 3.5-.804V4.804C17.943 4.29 16.755 4 15.5 4z" /></svg>Laporan & Progress Individu</h2>
+                             <h2 class="text-xl sm:text-2xl font-bold text-slate-900 mb-6 flex items-center"><span class="text-2xl mr-3">📈</span>Laporan & Progress Individu</h2>
                              <div id="peserta-progress-list" class="space-y-6"></div>
                         </section>
                     </div>
@@ -240,8 +251,8 @@
                     <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4 gap-4">
                         <h2 class="text-xl font-bold text-slate-900">Progress Seluruh Peserta</h2>
                         <button id="export-data-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 flex items-center justify-center gap-2 text-sm w-full sm:w-auto">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
-                            Download Rekap
+                            <span class="text-lg">📥</span>
+                            <span>Download Rekap</span>
                         </button>
                     </div>
                     <div id="admin-participant-list" class="space-y-8"></div>
@@ -414,22 +425,15 @@
     </div>
     
     <script type="module">
-        // =================================================================================
-        // Aplikasi Web Kolaboratif Coaching Hub: STAR 2.0 (Final)
-        // Dibuat untuk manajemen sesi coaching antara peserta dan coach.
-        // Fitur: Penjadwalan, tracking progress, approval, dan rekapitulasi.
-        // =================================================================================
-
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, getDocs, onSnapshot, addDoc, updateDoc, writeBatch, query, setLogLevel, deleteDoc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- SECTION: KONFIGURASI FIREBASE & APLIKASI ---
         const firebaseConfig = {
           apiKey: "AIzaSyD-oH9MiKNj1Bz02HZ3PWSYScpXwvSROYM",
           authDomain: "coaching-hub-star.firebaseapp.com",
           projectId: "coaching-hub-star",
-          storageBucket: "coaching-hub-star.appspot.com",
+          storageBucket: "coaching-hub-star.firebasestorage.app",
           messagingSenderId: "414500185726",
           appId: "1:414500185726:web:2f4be8dd29234c13f5da2f"
         };
@@ -441,13 +445,12 @@
         const db = getFirestore(app);
         setLogLevel('debug');
 
-        // --- SECTION: REFERENSI KOLEKSI FIRESTORE ---
         const participantsCol = collection(db, `artifacts/${appId}/public/data/participants`);
         const sessionsCol = collection(db, `artifacts/${appId}/public/data/sessions`);
         const coachingLogsCol = collection(db, `artifacts/${appId}/public/data/coachingLogs`);
         const availabilitiesCol = collection(db, `artifacts/${appId}/public/data/coachAvailabilities`);
+        const metadataCol = collection(db, `artifacts/${appId}/public/data/_metadata`);
 
-        // --- SECTION: STATE MANAGEMENT APLIKASI ---
         let state = {
             currentUser: null,
             userRole: null, 
@@ -465,7 +468,6 @@
             },
         };
 
-        // --- SECTION: DATA STATIS & MAPPING ---
         const mentorNikMap = {
             '20000301HE': 'HADI EKO SUSENO', 'BCP0009076': 'RAY FANDI', '2017112459IM': 'INDRA PRIMA LUKITO',
             '20130610DY': 'DEBBY YUGIANDI PERMANA', '20040615WS': 'WAWAN SETYAWAN', '2016080693NA': 'NASDIN SJAMSUDDIN',
@@ -473,25 +475,13 @@
         };
         state.coaches = Object.values(mentorNikMap);
 
-        // --- Kumpulan DOM Elements ---
-        const body = document.body;
-        const entryHeader = document.getElementById('entry-header');
-        const loginOverlayBlock = document.getElementById('login-overlay-block');
-        const appContainer = document.getElementById('app-container');
         const loadingOverlay = document.getElementById('loading-overlay');
         const loadingText = document.getElementById('loading-text');
 
         async function main() {
-            if (firebaseConfig.apiKey.startsWith("GANTI_DENGAN")) {
-                loadingText.innerHTML = "Konfigurasi Firebase belum diisi.<br>Silakan edit file index.html dan masukkan konfigurasi Anda.";
-                loadingOverlay.querySelector('svg').classList.add('hidden');
-                return;
-            }
-
             try {
                 onAuthStateChanged(auth, async (user) => {
                     if (user) {
-                        console.log("Firebase Auth user signed in anonymously:", user.uid);
                         await initializeAndLoadData();
                         setupRealtimeListeners();
                     } else {
@@ -502,38 +492,49 @@
             } catch (error) {
                 console.error("Firebase Authentication failed:", error);
                 loadingText.textContent = "Gagal melakukan otentikasi. Cek konfigurasi Firebase dan Authorized Domains.";
-                loadingOverlay.querySelector('svg').classList.add('hidden');
+                loadingOverlay.querySelector('.loader').classList.add('hidden');
             }
         }
         
         async function initializeAndLoadData() {
             try {
-                loadingText.textContent = "Memuat data peserta...";
-                console.log("Fetching initial data from Firestore...");
-                
-                const participantsSnapshot = await getDocs(query(participantsCol));
+                loadingText.textContent = "Memeriksa data...";
+                const seedingFlagRef = doc(metadataCol, 'seeding_status');
+                const seedingFlagSnap = await getDoc(seedingFlagRef);
 
-                if (participantsSnapshot.empty) {
-                    console.log("No participants found, attempting to seed initial data...");
-                    loadingText.textContent = "Menyiapkan data awal untuk pertama kali...";
-                    const initialParticipantsData = [
-                        { name: 'WISNU JATI NUGROHO', coach: 'HADI EKO SUSENO', password: 'BCP0009308' }, { name: 'NUNUNG SUPRIADY', coach: 'HADI EKO SUSENO', password: 'BCP0008621' },
-                        { name: 'FILTRA ABSRI', coach: 'RAY FANDI', password: 'BCP0009188' }, { name: 'URBANUS MASYUR', coach: 'INDRA PRIMA LUKITO', password: 'BCP0009504' },
-                        { name: 'ZULKIFLI MOKODOMPIT', coach: 'DEBBY YUGIANDI PERMANA', password: 'BCP0009280' }, { name: 'YOSEP ANGGARIAWAN', coach: 'NASDIN SJAMSUDDIN', password: 'BCP0008632' },
-                        { name: 'BETA JAUVAN FEDRIANTO', coach: 'I PUTU EKA RIZKY SAPUTRA', password: 'BCP0009404' }, { name: 'ILHAM S', coach: 'SUFARMAN MUH ALI', password: 'BCP0009653' },
-                        { name: 'MUHAMMAD SLAMET TIARA RAMADHAN', coach: 'RAY FANDI', password: 'BCP0009588' }, { name: 'MUKAMAT RIYONO MUBAROCHMAN', coach: 'NASDIN SJAMSUDDIN', password: 'BCP0009586' },
-                        { name: 'DHANI ARISANDI', coach: 'WAWAN SETYAWAN', password: '20120501DA' }, { name: 'TRIO AFRIYONO', coach: 'NASDIN SJAMSUDDIN', password: '2022040834' },
-                        { name: 'INDRA RAHMAN PUTRA', coach: 'ARIF FAKIH, S.T.', password: '2020120548' }
-                    ];
-                    const batch = writeBatch(db);
-                    initialParticipantsData.forEach(p => { batch.set(doc(participantsCol), {...p, level: 'Peserta STAR'}); });
-                    await batch.commit();
-                    console.log("Seeding complete. Refetching data...");
-                    const newParticipantsSnap = await getDocs(query(participantsCol));
-                    state.participants = newParticipantsSnap.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
-                } else {
-                    state.participants = participantsSnapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+                if (!seedingFlagSnap.exists()) {
+                    console.log("Seeding flag not found. Checking participants collection...");
+                    const participantsSnapshotCheck = await getDocs(query(participantsCol));
+                    if (participantsSnapshotCheck.empty) {
+                        console.log("Participants collection is empty. Seeding initial data...");
+                        loadingText.textContent = "Menyiapkan data awal untuk pertama kali...";
+                        const initialParticipantsData = [
+                            { name: 'WISNU JATI NUGROHO', coach: 'HADI EKO SUSENO', password: 'BCP0009308' }, { name: 'NUNUNG SUPRIADY', coach: 'HADI EKO SUSENO', password: 'BCP0008621' },
+                            { name: 'FILTRA ABSRI', coach: 'RAY FANDI', password: 'BCP0009188' }, { name: 'URBANUS MASYUR', coach: 'INDRA PRIMA LUKITO', password: 'BCP0009504' },
+                            { name: 'ZULKIFLI MOKODOMPIT', coach: 'DEBBY YUGIANDI PERMANA', password: 'BCP0009280' }, { name: 'YOSEP ANGGARIAWAN', coach: 'NASDIN SJAMSUDDIN', password: 'BCP0008632' },
+                            { name: 'BETA JAUVAN FEDRIANTO', coach: 'I PUTU EKA RIZKY SAPUTRA', password: 'BCP0009404' }, { name: 'ILHAM S', coach: 'SUFARMAN MUH ALI', password: 'BCP0009653' },
+                            { name: 'MUHAMMAD SLAMET TIARA RAMADHAN', coach: 'RAY FANDI', password: 'BCP0009588' }, { name: 'MUKAMAT RIYONO MUBAROCHMAN', coach: 'NASDIN SJAMSUDDIN', password: 'BCP0009586' },
+                            { name: 'DHANI ARISANDI', coach: 'WAWAN SETYAWAN', password: '20120501DA' }, { name: 'TRIO AFRIYONO', coach: 'NASDIN SJAMSUDDIN', password: '2022040834' },
+                            { name: 'INDRA RAHMAN PUTRA', coach: 'ARIF FAKIH, S.T.', password: '2020120548' }
+                        ];
+                        const batch = writeBatch(db);
+                        initialParticipantsData.forEach(p => { 
+                            const newParticipantRef = doc(participantsCol);
+                            batch.set(newParticipantRef, {...p, level: 'Peserta STAR'}); 
+                        });
+                        batch.set(seedingFlagRef, { completed: true, timestamp: new Date() });
+                        
+                        await batch.commit();
+                        console.log("Seeding complete.");
+                    } else {
+                        console.log("Participants exist, but seeding flag was missing. Setting flag now.");
+                        await setDoc(seedingFlagRef, { completed: true, timestamp: new Date(), note: "Flag created retroactively." });
+                    }
                 }
+
+                loadingText.textContent = "Memuat data peserta...";
+                const participantsSnapshot = await getDocs(query(participantsCol));
+                state.participants = participantsSnapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
                 
                 console.log(`Successfully loaded ${state.participants.length} participants.`);
                 state.isDataReady = true;
@@ -542,7 +543,7 @@
             } catch (error) {
                 console.error("Failed to load or seed initial data:", error);
                 loadingText.textContent = "Gagal memuat data. Cek koneksi dan aturan keamanan Firestore.";
-                loadingOverlay.querySelector('svg').classList.add('hidden');
+                loadingOverlay.querySelector('.loader').classList.add('hidden');
             }
         }
         
@@ -577,7 +578,6 @@
                 return;
             }
             
-            console.log(`Attempting to log in. Total participants loaded: ${state.participants.length}`);
             const participant = state.participants.find(p => p.password === password);
             if (participant) {
                 handleLogin(participant, 'peserta');
@@ -621,9 +621,9 @@
 
         function showLoginScreen() {
             hideLoading();
-            body.classList.remove('auth-pending');
-            entryHeader.classList.remove('-translate-y-full');
-            loginOverlayBlock.classList.remove('hidden');
+            document.body.classList.remove('auth-pending');
+            document.getElementById('entry-header').classList.remove('-translate-y-full');
+            document.getElementById('login-overlay-block').classList.remove('hidden');
         }
 
         function switchView(role) {
@@ -673,9 +673,9 @@
             document.getElementById('peserta-coach-name').textContent = state.currentUser.coach || 'Belum Ditentukan';
             
             const mySessions = state.sessions.filter(s => s.coacheeId === state.currentUser.docId);
-            const sortedSessions = [...mySessions].sort((a, b) => new Date(b.date) - new Date(a.date)).sort((a,b) => (a.status === 'Selesai') - (b.status === 'Selesai'));
+            const sortedSessions = [...mySessions].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            jadwalList.innerHTML = sortedSessions.length > 0 ? sortedSessions.map(session => renderSessionCard(session, 'peserta')).join('') : `<div class="text-center p-6 text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg><p class="mt-2 font-semibold">Belum ada jadwal</p><p class="text-sm">Ajukan jadwal baru di samping.</p></div>`;
+            jadwalList.innerHTML = sortedSessions.length > 0 ? sortedSessions.map(session => renderSessionCard(session, 'peserta')).join('') : `<div class="text-center p-6 text-slate-500"><span class="text-4xl">🗓️</span><p class="mt-2 font-semibold">Belum ada jadwal</p><p class="text-sm">Ajukan jadwal baru di samping.</p></div>`;
             progressList.innerHTML = renderIndividualProgress(state.currentUser.docId);
 
             const calendarContainer = document.getElementById('peserta-availability-calendar');
@@ -707,9 +707,9 @@
             
             const myCoacheeIds = myCoachees.map(p => p.docId);
             const mySessions = state.sessions.filter(s => myCoacheeIds.includes(s.coacheeId));
-            const sortedSessions = [...mySessions].sort((a, b) => new Date(b.date) - new Date(a.date)).sort((a,b) => (a.status === 'Selesai') - (b.status === 'Selesai'));
+            const sortedSessions = [...mySessions].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-            jadwalList.innerHTML = sortedSessions.length > 0 ? sortedSessions.map(session => renderSessionCard(session, 'coach')).join('') : `<div class="text-center p-6 text-slate-500"><svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg><p class="mt-2 font-semibold">Belum ada jadwal</p><p class="text-sm">Tunggu pengajuan dari peserta.</p></div>`;
+            jadwalList.innerHTML = sortedSessions.length > 0 ? sortedSessions.map(session => renderSessionCard(session, 'coach')).join('') : `<div class="text-center p-6 text-slate-500"><span class="text-4xl">📋</span><p class="mt-2 font-semibold">Belum ada jadwal</p><p class="text-sm">Tunggu pengajuan dari peserta.</p></div>`;
 
             const calendarContainer = document.getElementById('coach-availability-calendar');
             const { month, year } = state.calendar.coach;
@@ -784,7 +784,10 @@
 
         function renderSessionCard(session, role) {
             const coachee = state.participants.find(p => p.docId === session.coacheeId);
-            if (!coachee) return '';
+            if (!coachee) {
+                console.warn(`Could not find participant for session ID: ${session.id} with coacheeId: ${session.coacheeId}`);
+                return '';
+            }
             const sessionDate = new Date(session.date + 'T00:00:00');
             const month = sessionDate.toLocaleString('id-ID', { month: 'short' });
             const day = sessionDate.getDate();
@@ -943,7 +946,7 @@
             const monthName = date.toLocaleString('id-ID', { month: 'long', year: 'numeric' });
             const header = document.createElement('div');
             header.className = 'flex justify-between items-center mb-2';
-            header.innerHTML = `<button data-role="${role}" data-action="prev" class="calendar-nav p-1 rounded-full hover:bg-slate-200">&lt;</button><span class="font-semibold text-center">${monthName}</span><button data-role="${role}" data-action="next" class="calendar-nav p-1 rounded-full hover:bg-slate-200">&gt;</button>`;
+            header.innerHTML = `<button data-role="${role}" data-action="prev" class="calendar-nav p-2 rounded-full hover:bg-slate-200">‹</button><span class="font-semibold text-center">${monthName}</span><button data-role="${role}" data-action="next" class="calendar-nav p-2 rounded-full hover:bg-slate-200">›</button>`;
             container.appendChild(header);
             const grid = document.createElement('div');
             grid.className = 'calendar-grid';
@@ -1003,10 +1006,11 @@
         
         document.addEventListener('click', async (e) => {
             const target = e.target;
-            if(target.matches('.calendar-nav')) {
-                const role = target.dataset.role;
+            if(target.closest('.calendar-nav')) {
+                const button = target.closest('.calendar-nav');
+                const role = button.dataset.role;
                 let { month, year } = state.calendar[role];
-                if (target.dataset.action === 'prev') { month--; if (month < 0) { month = 11; year--; } }
+                if (button.dataset.action === 'prev') { month--; if (month < 0) { month = 11; year--; } }
                 else { month++; if (month > 11) { month = 0; year++; } }
                 state.calendar[role] = { month, year };
                 if (role === 'coach') renderCoachView(); 
@@ -1519,11 +1523,11 @@
             const header = document.createElement('div');
             header.className = 'flex justify-between items-center mb-2';
             header.innerHTML = `<button data-role="admin" data-action="prev" class="calendar-nav p-1 rounded-full hover:bg-slate-200 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                <span class="text-xl">‹</span>
             </button>
             <span class="font-semibold text-center text-slate-800">${monthName}</span>
             <button data-role="admin" data-action="next" class="calendar-nav p-1 rounded-full hover:bg-slate-200 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                <span class="text-xl">›</span>
             </button>`;
             container.appendChild(header);
 
