@@ -469,10 +469,10 @@
         };
 
         const mentorNikMap = {
-            '20000301HE': 'HADI EKO SUSENO', 'BCP0009076': 'RAY FANDI', '2017112459IM': 'INDRA PRIMA LUKITO',
-            '20130610DY': 'DEBBY YUGIANDI PERMANA', '20040615WS': 'WAWAN SETYAWAN', '2016080693NA': 'NASDIN SJAMSUDDIN',
-            'BCP0009880': 'ARIF FAKIH, S.T.', '2017112482I': 'I PUTU EKA RIZKY SAPUTRA', '2017040508SU': 'SUFARMAN MUH ALI',
-        };
+            '20000301HE': 'HADI EKO SUSENO & TRI PRAYITNO', '20000111TP': 'HADI EKO SUSENO & TRI PRAYITNO', 'BCP0009076': 'RAY FANDI', '2017112459IM': 'INDRA PRIMA LUKITO',
+            '20130610DY': 'DEBBY YUGIANDI PERMANA', '20040615WS': 'WAWAN SETYAWAN', '2016080693NA': 'NASDIN SJAMSUDDIN',
+            'BCP0009880': 'ARIF FAKIH, S.T.', '2017112482I': 'I PUTU EKA RIZKY SAPUTRA', '2017040508SU': 'SUFARMAN MUH ALI',
+        };
         state.coaches = Object.values(mentorNikMap);
 
         const loadingOverlay = document.getElementById('loading-overlay');
@@ -509,7 +509,7 @@
                         console.log("Participants collection is empty. Seeding initial data...");
                         loadingText.textContent = "Menyiapkan data awal untuk pertama kali...";
                         const initialParticipantsData = [
-                            { name: 'WISNU JATI NUGROHO', coach: 'HADI EKO SUSENO', password: 'BCP0009308' }, { name: 'NUNUNG SUPRIADY', coach: 'HADI EKO SUSENO', password: 'BCP0008621' },
+                            { name: 'WISNU JATI NUGROHO', coach: 'HADI EKO SUSENO & TRI PRAYITNO', password: 'BCP0009308' }, { name: 'NUNUNG SUPRIADY', coach: 'HADI EKO SUSENO & TRI PRAYITNO', password: 'BCP0008621' },
                             { name: 'FILTRA ABSRI', coach: 'RAY FANDI', password: 'BCP0009188' }, { name: 'URBANUS MASYUR', coach: 'INDRA PRIMA LUKITO', password: 'BCP0009504' },
                             { name: 'ZULKIFLI MOKODOMPIT', coach: 'DEBBY YUGIANDI PERMANA', password: 'BCP0009280' }, { name: 'YOSEP ANGGARIAWAN', coach: 'NASDIN SJAMSUDDIN', password: 'BCP0008632' },
                             { name: 'BETA JAUVAN FEDRIANTO', coach: 'I PUTU EKA RIZKY SAPUTRA', password: 'BCP0009404' }, { name: 'ILHAM S', coach: 'SUFARMAN MUH ALI', password: 'BCP0009653' },
