@@ -701,7 +701,7 @@
                                 <div class="progress-bar" style="width: ${progress}%;"></div>
                             </div>
                             <button class="view-coachee-progress-btn text-blue-600 text-sm mt-2 hover:underline" data-id="${p.docId}">Lihat Progress Detail</button>
-                            <div class="progress-detail-container" id="progress-container-${p.docId}"></div>
+                            <div class="progress-detail-container overflow-y-auto" id="progress-container-${p.docId}"></div>
                         </div>`;
             }).join('') : `<p class="text-center text-slate-500 italic">Anda belum memiliki peserta.</p>`;
             
@@ -758,7 +758,7 @@
                                 <button class="view-coachee-progress-btn flex-1 text-blue-600 text-sm hover:underline" data-id="${p.docId}">Lihat Progress Detail</button>
                                 <button class="download-coachee-report-btn flex-1 text-green-600 text-sm hover:underline" data-id="${p.docId}">Unduh Detail Sesi (.csv)</button>
                             </div>
-                            <div class="progress-detail-container" id="progress-container-${p.docId}"></div>
+                            <div class="progress-detail-container overflow-y-auto" id="progress-container-${p.docId}"></div>
                         </div>`;
             }).join('') : `<p class="text-center text-slate-500 italic">Tidak ada data peserta.</p>`;
         }
